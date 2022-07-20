@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs/promises');
+const getToken = require('./utils/tokenGenerator');
 
 const app = express();
 app.use(bodyParser.json());
@@ -26,13 +27,29 @@ app.get('/talker/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const talkers = JSON.parse(await fs.readFile('talker.json'));
-    const talkerById = talkers.find((r) => r.id === Number(id));
+    const talkerById = talkers.find((talker) => talker.id === Number(id));
 
     if (!talkerById) return res.status(404).json({ message: 'Pessoa palestrante não encontrada' });
 
     return res.status(200).json(talkerById);
-  } catch (err) {
-    next(err);
+  } catch (e) {
+    next(e);
+  }
+});
+
+app.post('/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      res.status(401).json({ message: 'Campos email e password obrigatórios!' });
+    }
+
+    const token = getToken();
+
+    return res.status(200).json({ token });
+  } catch (e) {
+    next(e);
   }
 });
 
