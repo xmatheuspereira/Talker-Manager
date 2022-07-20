@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs/promises');
+const authMiddleware = require('./auth-middleware');
 const getToken = require('./utils/tokenGenerator');
 
 const app = express();
@@ -37,12 +38,12 @@ app.get('/talker/:id', async (req, res, next) => {
   }
 });
 
-app.post('/login', async (req, res, next) => {
+app.post('/login', authMiddleware, async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    
-    if (!email || !password) {
-      res.status(401).json({ message: 'Campos email e password obrigatórios!' });
+    const { password } = req.body;
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'O "password" deve ter pelo menos 6 caracteres' });
     }
 
     const token = getToken();
