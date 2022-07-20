@@ -33,6 +33,19 @@ app.get('/talker', async (_req, res, next) => {
   }
 });
 
+app.get('/talker/search', hasValidToken, async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    const talkers = await fs.readFile(TALKER_FILE);
+
+    const searchTalker = JSON.parse(talkers).filter((search) => search.name.includes(q));
+
+    return res.status(200).json(searchTalker);
+  } catch (e) {
+    next(e);
+  }
+});
+
 app.get('/talker/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -119,13 +132,13 @@ app.delete('/talker/:id', hasValidToken, async (req, res, next) => {
     const { id } = req.params;
 
     const talkerList = JSON.parse(await fs.readFile(TALKER_FILE));
-  
+
     const talkerIndex = talkerList.findIndex((t) => t.id === Number(id));
-  
+
     talkerList.splice(talkerIndex, 1);
 
     fs.writeFile(TALKER_FILE, JSON.stringify(talkerList));
-  
+
     res.status(204).json(talkerIndex);
   } catch (e) {
     next(e);
