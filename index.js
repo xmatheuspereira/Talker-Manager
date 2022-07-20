@@ -17,6 +17,7 @@ app.use(bodyParser.json());
 
 const HTTP_OK_STATUS = 200;
 const PORT = '3000';
+const TALKER_FILE = 'talker.json';
 
 // não remova esse endpoint, e para o avaliador funcionar
 app.get('/', (_request, response) => {
@@ -25,7 +26,7 @@ app.get('/', (_request, response) => {
 
 app.get('/talker', async (_req, res, next) => {
   try {
-    const talkers = JSON.parse(await fs.readFile('talker.json'));
+    const talkers = JSON.parse(await fs.readFile(TALKER_FILE));
     return res.status(200).json(talkers);
   } catch (e) {
     next(e);
@@ -35,7 +36,7 @@ app.get('/talker', async (_req, res, next) => {
 app.get('/talker/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const talkers = JSON.parse(await fs.readFile('talker.json'));
+    const talkers = JSON.parse(await fs.readFile(TALKER_FILE));
     const talkerById = talkers.find((talker) => talker.id === Number(id));
 
     if (!talkerById) return res.status(404).json({ message: 'Pessoa palestrante não encontrada' });
@@ -73,15 +74,41 @@ app.post('/talker',
   try {
     const { name, age, talk: { watchedAt, rate } } = req.body;
 
-    const talkers = JSON.parse(await fs.readFile('talker.json'));
+    const talkers = JSON.parse(await fs.readFile(TALKER_FILE));
 
     const registerTalker = { name, age, id: talkers.length + 1, talk: { watchedAt, rate } };
 
     talkers.push(registerTalker);
 
-    fs.writeFile('talker.json', JSON.stringify(talkers));
+    fs.writeFile(TALKER_FILE, JSON.stringify(talkers));
 
     return res.status(201).json(registerTalker);
+  } catch (e) {
+    next(e);
+  }
+});
+
+app.put('/talker/:id',
+  hasValidName,
+  hasValidToken,
+  hasValidAge,
+  talkValidation,
+  rateValidation,
+  watchedAtValidation,
+  async (req, res, next) => {
+  try {
+    const { name, age, talk } = req.body;
+    const { id } = req.params;
+    
+    const talkerList = JSON.parse(await fs.readFile(TALKER_FILE));
+
+    const talkerIndex = talkerList.findIndex((t) => t.id === Number(id));
+
+    talkerList[talkerIndex] = { id: Number(id), name, age, talk };
+
+    fs.writeFile(TALKER_FILE, JSON.stringify(talkerList));
+
+    return res.status(200).json(talkerList[talkerIndex]);
   } catch (e) {
     next(e);
   }
