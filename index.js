@@ -1,8 +1,16 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs/promises');
-const authMiddleware = require('./auth-middleware');
+const authMiddleware = require('./middlewares/auth-middleware');
 const getToken = require('./utils/tokenGenerator');
+const {
+  hasValidToken,
+  hasValidName,
+  hasValidAge,
+  rateValidation,
+  watchedAtValidation,
+  talkValidation,
+} = require('./middlewares/talkers-middeware');
 
 const app = express();
 app.use(bodyParser.json());
@@ -49,6 +57,31 @@ app.post('/login', authMiddleware, async (req, res, next) => {
     const token = getToken();
 
     return res.status(200).json({ token });
+  } catch (e) {
+    next(e);
+  }
+});
+
+app.post('/talker',
+  hasValidName,
+  hasValidToken,
+  hasValidAge,
+  talkValidation,
+  rateValidation,
+  watchedAtValidation,
+  async (req, res, next) => {
+  try {
+    const { name, age, talk: { watchedAt, rate } } = req.body;
+
+    const talkers = JSON.parse(await fs.readFile('talker.json'));
+
+    const registerTalker = { name, age, id: talkers.length + 1, talk: { watchedAt, rate } };
+
+    talkers.push(registerTalker);
+
+    fs.writeFile('talker.json', JSON.stringify(talkers));
+
+    return res.status(201).json(registerTalker);
   } catch (e) {
     next(e);
   }
