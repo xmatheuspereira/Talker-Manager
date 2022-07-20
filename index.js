@@ -114,6 +114,24 @@ app.put('/talker/:id',
   }
 });
 
+app.delete('/talker/:id', hasValidToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const talkerList = JSON.parse(await fs.readFile(TALKER_FILE));
+  
+    const talkerIndex = talkerList.findIndex((t) => t.id === Number(id));
+  
+    talkerList.splice(talkerIndex, 1);
+
+    fs.writeFile(TALKER_FILE, JSON.stringify(talkerList));
+  
+    res.status(204).json(talkerIndex);
+  } catch (e) {
+    next(e);
+  }
+});
+
 app.use((err, _req, res, _next) => {
   res.status(500).json({ message: err.message });
 });
